@@ -208,7 +208,7 @@ def report_stats(transactions, month, year, budget):
     # Biểu đồ ASCII
     print("\n--- Biểu đồ chi tiêu theo danh mục ---")
     for cat, amount in sorted_category:
-        bar = '#' * max(1, amount // 100000)  # 1 cột = 100k (tùy chỉnh)
+        bar = '*' * max(1, amount // 100000)  # 1 cột = 100k (tùy chỉnh)
         print(f"{cat:15}: {bar} {amount}")
         
     # Cảnh báo vượt ngân sách
@@ -247,14 +247,14 @@ def Menu():
             if(validate_amount(amount) == False):
                 print("[Error]: Số tiền phải lớn hơn 0")
                 check = 0
-            if _type.lower() not in VALID_TYPE:
+            if _type not in VALID_TYPE:
                 print("Loại chỉ có thể là thu hoặc chi")
                 check = 0
             if not category.strip():
                 print("Không thể có danh mục trống")
                 check = 0
             if(check): 
-                add_transaction(date, _type.lower(), amount, category, description, transactions)
+                add_transaction(date, _type, amount, category, description, transactions)
                 if not any(test["title"].lower() == category.lower() for test in categories):                    
                     add_category(category.lower(), _type, categories)
         elif option == '2':
@@ -298,4 +298,3 @@ def main():
     
 if __name__ == "__main__":
     main()
-
