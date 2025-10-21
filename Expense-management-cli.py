@@ -1,5 +1,4 @@
 import json
-import sys
 import os
 from datetime import datetime
 
@@ -30,14 +29,14 @@ def add_transaction(date, _type, amount, category, description, transactions):
     save_tasks(transactions, FILENAME)
     print(f'Added transaction #{transaction["id"]}')
 
-def add_category(description, _type, categories):
+def add_category(title, _type, categories):
     category = {
-        "desc" : description,
+        "title" : title,
         "type" : _type
     }
     categories.append(category)
     save_tasks(categories, FILENAME2)
-    print(f'Added categories #{category["desc"]}')
+    print(f'Added category #{category["title"]}')
 
 def show_history(transactions, month=None, year=None):
     if len(transactions) == 0:
@@ -61,7 +60,8 @@ def show_history(transactions, month=None, year=None):
                     cnt += 1
                     if cnt >= 10:
                         return
-                    
+            if cnt == 0:
+                print("Không có dữ liệu")
 def month_stats(transactions, month, year):
     # Lấy thánh trước
     prev_month = month
@@ -169,10 +169,58 @@ def validate_amount(amount):
     except:
         return False
 
+def report_stats(transactions, month, year, budget):
+    transaction_this_month = [transaction for transaction in transactions 
+                              if datetime.strptime(transaction['date'],"%d/%m/%Y").month == month
+                              and datetime.strptime(transaction['date'],"%d/%m/%Y").year == year]
+    if not transaction_this_month:
+        print("Không có giao dịch trong tháng này")
+        return
     
+    income = [transaction for transaction in transaction_this_month if transaction['type'] == 'thu']
+    expense = [transaction for transaction in transaction_this_month if transaction['type'] == 'chi']
+    
+    total_income = sum([transaction['amount'] for transaction in income])   
+    total_expense = sum([transaction['amount'] for transaction in expense])   
+    balance = total_income - total_expense
+    
+    print(f"\n=== BÁO CÁO THÁNG {month}/{year} ===")
+    print(f"Tổng thu: {total_income}")
+    print(f"Tổng chi: {total_expense}")
+    print(f"Số dư: {balance}\n")
+    
+    category_summary = {}
+    for transaction in transaction_this_month:
+        if transaction["type"] == "chi":
+            cat = transaction["category"]
+            category_summary[cat] = category_summary.get(cat, 0) + transaction["amount"]
+    
+    if not category_summary:
+        print("Không có dữ liệu chi tiêu.")
+        return
+    
+    print("\n--- Top 3 danh mục chi tiêu nhiều nhất ---")
+    sorted_category = sorted(category_summary.items(), key = lambda item: item[1], reverse=True)
+    top3 = sorted_category[:3]
+    for cat, amount in top3:
+        print(f"{cat}: {amount}")
+
+    # Biểu đồ ASCII
+    print("\n--- Biểu đồ chi tiêu theo danh mục ---")
+    for cat, amount in sorted_category:
+        bar = '#' * max(1, amount // 100000)  # 1 cột = 100k (tùy chỉnh)
+        print(f"{cat:15}: {bar} {amount}")
+        
+    # Cảnh báo vượt ngân sách
+    if total_expense > budget:
+        print(f"\nCảnh báo: Tổng chi {total_expense} vượt ngân sách {budget}!")
+    else:
+        print(f"\nChi tiêu trong giới hạn ngân sách ({budget}).")
+
+
 def Menu():    
-    
     transactions = load_tasks(FILENAME)
+    categories = load_tasks(FILENAME2)
     print(" ========== QUẢN LÝ CHI TIÊU ========== ")    
     while True:
         print("1. Nhập dữ liệu giao dịch")
@@ -184,9 +232,9 @@ def Menu():
         print("7. Thoát")
         print(" ========== QUẢN LÝ CHI TIÊU ========== ")    
 
-        option = int(input("Chọn: "))
+        option = input("Chọn: ")
 
-        if option == 1:
+        if option == '1':
             date = input("Nhập ngày tháng năm(dd/mm/yyyy): ")
             _type = input("Nhập loại(thu/chi): ")
             amount = int(input("Nhập số tiền: "))
@@ -199,31 +247,50 @@ def Menu():
             if(validate_amount(amount) == False):
                 print("[Error]: Số tiền phải lớn hơn 0")
                 check = 0
-            
+            if _type not in VALID_TYPE:
+                print("Loại chỉ có thể là thu hoặc chi")
+                check = 0
+            if not category.strip():
+                print("Không thể có danh mục trống")
+                check = 0
             if(check): 
                 add_transaction(date, _type, amount, category, description, transactions)
-        elif option == 2:
+                if not any(test["title"].lower() == category.lower() for test in categories):                    
+                    add_category(category.lower(), _type, categories)
+        elif option == '2':
             month = input("Nhập tháng (có thể để trống): ")
             year = input("Nhập năm (có thể để trống): ")
-            show_history(transactions, month, year)
-        elif option == 3:
-            month = input("Nhập tháng: ")
-            year = input("Nhập năm: ")
-            month_stats(transactions, month, year)
-        elif option == 4:
-            month = input("Nhập tháng: ")
-            year = input("Nhập năm: ")
-            list =category_stats(transactions, month, year)
-            print(list)
-        elif option == 5:
-            list = calculate_balance(transactions)
-            print(list)
-        # elif option == 6:
             
-        elif option == 7:
+            month = int(month) if month else None
+            year = int(year) if year else None
+            
+            show_history(transactions, month, year)
+        elif option == '3':
+            month = input("Nhập tháng: ")
+            year = input("Nhập năm: ")
+            res = month_stats(transactions, int(month), int(year))
+            print(res)
+        elif option == '4':
+            month = input("Nhập tháng: ")
+            year = input("Nhập năm: ")
+            category_stats(transactions, int(month), int(year))
+        elif option == '5':
+            res = calculate_balance(transactions)
+            print(res)
+        elif option == '6':
+            month = input("Nhập tháng: ")
+            year = input("Nhập năm: ")
+            budget = int(input("Nhập ngân sách cho tháng này: "))
+            report_stats(transactions, int(month), int(year), budget)
+        elif option == '7':
             break
-        else:
-            print("Lựa chọn không hợp lệ.")
+        elif option == '1024':
+            transactions.clear()
+            categories.clear()
+            save_tasks(transactions, FILENAME)
+            save_tasks(categories, FILENAME2)
+        else:            
+            print("[Error]: Lựa chọn không hợp lệ.")
 
 
 def main():
