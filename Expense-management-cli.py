@@ -247,14 +247,14 @@ def Menu():
             if(validate_amount(amount) == False):
                 print("[Error]: Số tiền phải lớn hơn 0")
                 check = 0
-            if _type not in VALID_TYPE:
+            if _type.lower() not in VALID_TYPE:
                 print("Loại chỉ có thể là thu hoặc chi")
                 check = 0
             if not category.strip():
                 print("Không thể có danh mục trống")
                 check = 0
             if(check): 
-                add_transaction(date, _type, amount, category, description, transactions)
+                add_transaction(date, _type.lower(), amount, category, description, transactions)
                 if not any(test["title"].lower() == category.lower() for test in categories):                    
                     add_category(category.lower(), _type, categories)
         elif option == '2':
@@ -298,3 +298,4 @@ def main():
     
 if __name__ == "__main__":
     main()
+
