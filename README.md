@@ -1,5 +1,5 @@
 # Expense-Management-User
-# ------THIẾT KẾ HỆ THỐNG QUẢN LÝ CHI TIÊU CÁ NHÂN (CLI)------
+# [------THIẾT KẾ HỆ THỐNG QUẢN LÝ CHI TIÊU CÁ NHÂN (CLI)------]
 
 # - Mô tả bài toán: Ứng dụng console theo dõi thu/chi hằng ngày, phân tích thói quen tiêu dùng và quản lý ngân sách
 + Console : CLI (Command Line Interface).
